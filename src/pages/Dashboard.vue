@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
 
-    <!-- Kalendar + mesec/godina -->
+
     <div class="bg-white rounded-lg shadow-md p-4">
       <p class="text-sm text-text-light mt-1">{{ currentMonthYear }}</p>
 
@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <!-- Reminder za vodu -->
+
     <section class="bg-green-100 rounded-lg shadow-md p-4 flex items-center gap-3">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -31,13 +31,12 @@
       </p>
     </section>
 
-    <!-- Info o lekovima -->
+
     <div class="bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
       <p class="text-sm text-text-dark font-semibold">You have {{ pills.length }} medications today</p>
       <p class="text-sm text-text-light">Last sync: Today at 8:00 AM</p>
     </div>
 
-    <!-- Dnevni log -->
     <section class="bg-white rounded-lg shadow-md p-4">
       <p class="font-semibold text-primary mb-2">Today’s Log</p>
       <ul class="space-y-1 text-sm text-text-dark">
@@ -46,7 +45,7 @@
       </ul>
     </section>
 
-    <!-- Lista lekova -->
+
     <section class="space-y-2">
       <p v-if="pills.length === 0" class="text-center text-sm text-gray-500">No medications found.</p>
       <div
@@ -62,7 +61,7 @@
       </div>
     </section>
 
-    <!-- Modal -->
+
     <div
         v-if="selectedPill"
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

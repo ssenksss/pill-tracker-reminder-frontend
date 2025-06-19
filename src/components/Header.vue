@@ -7,7 +7,7 @@
       <p class="text-sm opacity-90">Wishing you a healthy day 🌿</p>
     </div>
 
-    <img src="/src/assets/pilllogo.png" alt="Logo" class="w-13 h-10 rounded-full bg-white" />
+    <img src="../assets/pilllogo.png" alt="Logo" class="w-13 h-10 rounded-full bg-white" />
   </header>
 </template>
 
