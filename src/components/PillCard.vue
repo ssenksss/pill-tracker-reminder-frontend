@@ -1,42 +1,65 @@
 <template>
-  <div
-      class="flex items-center bg-white rounded-lg shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200"
-  >
-    <div class="w-14 h-14 mr-4 flex-shrink-0">
-      <img
-          v-if="imageSrc"
-          :src="imageSrc"
-          :alt="`Image of ${pill.name}`"
-          class="w-full h-full object-cover rounded-md bg-gray-200"
-      />
-      <div
-          v-else
-          class="w-full h-full flex items-center justify-center bg-gray-100 rounded-md text-2xl"
-      >
-        💊
+  <div class="relative">
+    <div
+        class="flex items-center bg-white rounded-2xl shadow-md px-4 py-4 mb-4 hover:shadow-lg transition duration-200"
+    >
+
+      <div class="w-14 h-14 mr-4 flex-shrink-0">
+        <img
+            v-if="imageSrc"
+            :src="imageSrc"
+            :alt="`Image of ${pill.name}`"
+            class="w-full h-full object-cover rounded-md bg-gray-200"
+        />
+        <div
+            v-else
+            class="w-full h-full flex items-center justify-center bg-gray-100 rounded-md text-2xl"
+        >
+          💊
+        </div>
       </div>
+
+      <div class="flex-1">
+        <p class="text-sm text-gray-900 font-semibold">
+          {{ pill.name }} - {{ pill.dosage || 'N/A' }}
+        </p>
+        <p class="text-xs text-gray-500">
+          {{ pill.context || 'After eating' }}
+        </p>
+        <p class="text-xs text-gray-500 mt-1">
+          🕒 Today, {{ formatTime(pill.time) }}
+        </p>
+        <p v-if="pill.count !== undefined" class="text-xs text-gray-600 mt-1">
+          💊 {{ pill.count }} pills left
+        </p>
+        <p
+            v-if="pill.count !== undefined && pill.count < 5"
+            class="text-xs text-red-500 mt-1"
+        >
+          ⚠️ Low supply – consider refill!
+        </p>
+      </div>
+
+      <button
+          @click="markAsTaken"
+          class="text-green-600 text-xl ml-4 hover:scale-110 transition-transform"
+          title="Mark as taken"
+      >
+        ✓
+      </button>
     </div>
 
-    <div class="flex-1">
-      <h2 class="font-semibold text-text-dark text-lg">{{ pill.name }}</h2>
-      <p class="mt-1 text-sm text-text-light leading-relaxed">
-        Dosage: <span class="font-medium">{{ pill.dosage || 'N/A' }}</span><br />
-        Frequency: <span class="font-medium">{{ pill.frequency || 'N/A' }}</span><br />
-        Note: <span class="font-medium">{{ pill.note || 'Nema' }}</span>
-      </p>
-    </div>
 
-    <div class="ml-4 text-primary font-semibold text-sm whitespace-nowrap">
-      <span class="mr-1">Time</span>💊 {{ formatTime(pill.time) }}
-    </div>
+    <button
+        @click.stop="openDetails"
+        class="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 text-sm shadow-md"
+        title="Show details"
+    >+</button>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
-import brufenImg from '../assets/Brufen.png'
-import paracetamolImg from '../assets/paracetamol.png'
+import { computed, defineEmits } from 'vue'
 
 const props = defineProps({
   pill: {
@@ -45,31 +68,59 @@ const props = defineProps({
   }
 })
 
-const localImages = {
-  'Brufen.png': brufenImg,
-  'paracetamol.png': paracetamolImg
-}
+const emit = defineEmits(['open-details'])
 
+// Ako je ime slike samo naziv fajla iz assets foldera
 const imageSrc = computed(() => {
-  const img = props.pill.image?.trim() || ''
-
-  const normalized = img.toLowerCase()
-
-  const normalizedLocalImages = {
-    'brufen.png': brufenImg,
-    'paracetamol.png': paracetamolImg
+  if (!props.pill.image) return ''
+  try {
+    // new URL koristi Vite da pronađe sliku u src/assets
+    return new URL(`../assets/${props.pill.image}`, import.meta.url).href
+  } catch {
+    return ''
   }
-
-  if (normalized in normalizedLocalImages) {
-    return normalizedLocalImages[normalized]
-  }
-
-  return img
 })
-
 
 function formatTime(time) {
   if (!time) return 'N/A'
   return time.slice(0, 5)
 }
+
+async function markAsTaken() {
+  if (props.pill.count <= 0) return
+
+  const updatedCount = props.pill.count - 1
+
+  try {
+    await fetch(`http://localhost:3000/api/pills/${props.pill.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...props.pill,
+        count: updatedCount
+      })
+    })
+
+    props.pill.count = updatedCount
+  } catch (error) {
+    console.error('Error updating pill count:', error)
+  }
+}
+
+function openDetails() {
+  emit('open-details', props.pill)
+}
 </script>
+
+
+<style scoped>
+
+.relative {
+  position: relative;
+}
+.absolute {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+</style>
