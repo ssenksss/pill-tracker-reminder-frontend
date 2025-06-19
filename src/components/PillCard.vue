@@ -1,25 +1,42 @@
 <template>
-  <div class="flex bg-white rounded-lg shadow-md p-4 mb-4 items-center hover:shadow-lg transition-shadow duration-200">
-    <img
-        v-if="pill.image"
-        :src="imageSrc"
-        :alt="`Image of ${pill.name}`"
-        class="w-12 h-12 rounded-md object-cover bg-gray-200 mr-4"
-    />
-    <div>
-      <h2 class="font-semibold text-text-dark">{{ pill.name }}</h2>
-      <p class="text-sm text-text-light leading-relaxed">
-        Dosage: {{ pill.dosage || 'N/A' }}<br />
-        Frequency: {{ pill.frequency || 'N/A' }}<br />
-        Note: {{ pill.note || 'Nema' }}
+  <div
+      class="flex items-center bg-white rounded-lg shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200"
+  >
+    <div class="w-14 h-14 mr-4 flex-shrink-0">
+      <img
+          v-if="imageSrc"
+          :src="imageSrc"
+          :alt="`Image of ${pill.name}`"
+          class="w-full h-full object-cover rounded-md bg-gray-200"
+      />
+      <div
+          v-else
+          class="w-full h-full flex items-center justify-center bg-gray-100 rounded-md text-2xl"
+      >
+        💊
+      </div>
+    </div>
+
+    <div class="flex-1">
+      <h2 class="font-semibold text-text-dark text-lg">{{ pill.name }}</h2>
+      <p class="mt-1 text-sm text-text-light leading-relaxed">
+        Dosage: <span class="font-medium">{{ pill.dosage || 'N/A' }}</span><br />
+        Frequency: <span class="font-medium">{{ pill.frequency || 'N/A' }}</span><br />
+        Note: <span class="font-medium">{{ pill.note || 'Nema' }}</span>
       </p>
-      <p class="mt-1 text-sm font-semibold text-primary"> Time 💊 {{ formatTime(pill.time) }}</p>
+    </div>
+
+    <div class="ml-4 text-primary font-semibold text-sm whitespace-nowrap">
+      <span class="mr-1">Time</span>💊 {{ formatTime(pill.time) }}
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+
+import brufenImg from '../assets/Brufen.png'
+import paracetamolImg from '../assets/paracetamol.png'
 
 const props = defineProps({
   pill: {
@@ -28,16 +45,28 @@ const props = defineProps({
   }
 })
 
+const localImages = {
+  'Brufen.png': brufenImg,
+  'paracetamol.png': paracetamolImg
+}
+
 const imageSrc = computed(() => {
-  if (props.pill.image) {
-    try {
-      return new URL(`../assets/${props.pill.image}`, import.meta.url).href
-    } catch {
-      return ''
-    }
+  const img = props.pill.image?.trim() || ''
+
+  const normalized = img.toLowerCase()
+
+  const normalizedLocalImages = {
+    'brufen.png': brufenImg,
+    'paracetamol.png': paracetamolImg
   }
-  return ''
+
+  if (normalized in normalizedLocalImages) {
+    return normalizedLocalImages[normalized]
+  }
+
+  return img
 })
+
 
 function formatTime(time) {
   if (!time) return 'N/A'
