@@ -47,6 +47,13 @@
       >
         ✓
       </button>
+      <button
+          @click="markAsSkipped"
+          class="text-red-500 text-sm hover:underline"
+      >
+        Preskočeno
+      </button>
+
     </div>
 
 
@@ -94,6 +101,7 @@ async function markAsTaken() {
   const updatedCount = props.pill.count - 1
 
   try {
+    // 1. Ažuriraj broj tableta
     await fetch(`http://localhost:3000/api/pills/${props.pill.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -104,8 +112,35 @@ async function markAsTaken() {
     })
 
     props.pill.count = updatedCount
+
+    // 2. Ubaci log u pill_logs
+    await fetch('http://localhost:3000/api/pill-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: 1,
+        pill_id: props.pill.id,
+        status: 'Uzeto'
+      })
+    })
   } catch (error) {
-    console.error('Error updating pill count:', error)
+    console.error('Greška pri logovanju uzimanja leka:', error)
+  }
+}
+
+async function markAsSkipped() {
+  try {
+    await fetch('http://localhost:3000/api/pill-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: 1,
+        pill_id: props.pill.id,
+        status: 'Preskočeno'
+      })
+    })
+  } catch (error) {
+    console.error('Greška pri logovanju preskakanja leka:', error)
   }
 }
 
