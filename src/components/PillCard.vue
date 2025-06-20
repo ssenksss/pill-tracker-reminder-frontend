@@ -51,10 +51,13 @@
 
 
     <button
-        @click.stop="openDetails"
+        @click="openDetails"
         class="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 text-sm shadow-md"
         title="Show details"
     >+</button>
+
+
+
   </div>
 </template>
 
@@ -70,11 +73,10 @@ const props = defineProps({
 
 const emit = defineEmits(['open-details'])
 
-// Ako je ime slike samo naziv fajla iz assets foldera
 const imageSrc = computed(() => {
   if (!props.pill.image) return ''
   try {
-    // new URL koristi Vite da pronađe sliku u src/assets
+
     return new URL(`../assets/${props.pill.image}`, import.meta.url).href
   } catch {
     return ''

@@ -1,7 +1,5 @@
 <template>
   <div class="space-y-6">
-
-
     <div class="bg-white rounded-lg shadow-md p-4">
       <p class="text-sm text-text-light mt-1">{{ currentMonthYear }}</p>
 
@@ -20,7 +18,6 @@
       </div>
     </div>
 
-
     <section class="bg-green-100 rounded-lg shadow-md p-4 flex items-center gap-3">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -30,7 +27,6 @@
         Don’t forget to drink enough water today! 💧 Staying hydrated helps your meds work better.
       </p>
     </section>
-
 
     <div class="bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
       <p class="text-sm text-text-dark font-semibold">You have {{ pills.length }} medications today</p>
@@ -45,65 +41,41 @@
       </ul>
     </section>
 
-
     <section class="space-y-2">
       <p v-if="pills.length === 0" class="text-center text-sm text-gray-500">No medications found.</p>
-      <div
-          v-for="pill in pills"
-          :key="pill.id"
-          class="relative"
-      >
+      <div v-for="pill in pills" :key="pill.id" class="relative">
         <PillCard :pill="pill" />
         <button
             class="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 text-sm shadow-md"
-            @click="openModal(pill)"
+            @click="goToPillDetails(pill.id)"
+            title="Show details"
         >+</button>
       </div>
     </section>
-
-
-    <div
-        v-if="selectedPill"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div class="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md relative">
-        <button
-            class="absolute top-2 right-3 text-gray-500 hover:text-black text-xl"
-            @click="closeModal"
-        >&times;</button>
-        <h2 class="text-lg font-bold text-primary mb-2">{{ selectedPill.name }}</h2>
-        <p class="text-sm text-text-dark mb-1">💊 Dosage: {{ selectedPill.dosage }}</p>
-        <p class="text-sm text-text-dark mb-1">⏰ Reminder: {{ selectedPill.time }}</p>
-        <p class="text-sm text-text-dark">🧪 Purpose: {{ selectedPill.purpose || 'No info' }}</p>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import PillCard from '../components/PillCard.vue'
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import PillCard from '../components/PillCard.vue'
 
 const pills = ref([])
-const selectedPill = ref(null)
+const router = useRouter()
+
+const goToPillDetails = (pillId) => {
+  router.push(`/pills/${pillId}`)
+}
 
 onMounted(async () => {
   try {
     const response = await fetch('http://localhost:3000/api/pills')
     if (!response.ok) throw new Error('Failed to fetch pills')
-    const data = await response.json()
-    pills.value = data
+    pills.value = await response.json()
   } catch (error) {
     console.error('Error loading pills:', error)
   }
 })
-
-const openModal = (pill) => {
-  selectedPill.value = pill
-}
-const closeModal = () => {
-  selectedPill.value = null
-}
 
 const today = new Date()
 const currentMonthYear = computed(() =>
