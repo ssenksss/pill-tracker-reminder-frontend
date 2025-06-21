@@ -1,4 +1,4 @@
-// store/index.ts (optional)
+// store/index.ts
 import { defineStore } from 'pinia'
 import type { Pill } from '../types/Pill'
 

@@ -1,4 +1,3 @@
-// types/User.ts
 export interface Pill {
     id?: number
     user_id?: number

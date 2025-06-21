@@ -1,97 +1,98 @@
 <template>
   <div class="bg-white rounded-lg p-6 shadow-md w-full max-w-xl mx-auto mt-8">
-    <h2 class="text-xl font-semibold text-primary mb-4">
-      {{ isEdit ? 'Edit Pill' : 'Add New Pill' }}
-    </h2>
-
+    <h2 class="text-xl font-semibold text-primary mb-4">Add New Pill</h2>
     <form @submit.prevent="submitForm" class="space-y-4">
       <input v-model="form.name" placeholder="Pill name" class="input" required />
       <input v-model="form.description" placeholder="Pill description" class="input" required />
+      <input v-model="form.dosage" placeholder="Dosage" class="input" required />
+      <input v-model="form.frequency" placeholder="Frequency (e.g. daily, twice a day)" class="input" />
       <input v-model="form.time" type="time" class="input" required />
-      <input v-model="form.image" placeholder="Picture URL" class="input" />
-      <button type="submit" class="bg-primary text-white py-2 px-4 rounded">
-        {{ isEdit ? 'Update' : 'Save' }}
-      </button>
+      <input v-model="form.note" placeholder="Additional note" class="input" />
+      <input v-model.number="form.count" type="number" min="1" placeholder="Count" class="input" />
+      <input v-model="form.image" placeholder="Image name" class="input" />
+      <button type="submit" class="bg-primary text-white py-2 px-4 rounded">Save</button>
     </form>
-
-    <p v-if="message" :class="messageClass" class="mt-4 text-center">
-      {{ message }}
-    </p>
+    <p v-if="message" :class="[messageClass, 'mt-4 text-center']">{{ message }}</p>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const form = ref({
   name: '',
   description: '',
+  dosage: '',
+  frequency: '',
   time: '',
+  note: '',
+  count: 1,
   image: ''
 })
 
 const message = ref('')
 const isError = ref(false)
 
-const route = useRoute()
-const router = useRouter()
-
-const isEdit = computed(() => route.params.id !== undefined)
-
-onMounted(async () => {
-  if (isEdit.value) {
-    try {
-      const res = await fetch(`http://localhost:3000/api/pills/${route.params.id}`)
-      if (!res.ok) throw new Error('Pill not found')
-      const data = await res.json()
-      form.value = {
-        name: data.name || '',
-        description: data.description || '',
-        time: data.time || '',
-        image: data.image || ''
-      }
-    } catch (err) {
-      console.error('Failed to load pill:', err)
-      message.value = 'Ne mogu da učitam lek.'
-      isError.value = true
-    }
-  }
-})
+const messageClass = computed(() => (isError.value ? 'text-red-600' : 'text-green-600'))
 
 const submitForm = async () => {
-  const url = isEdit.value
-      ? `http://localhost:3000/api/pills/${route.params.id}`
-      : 'http://localhost:3000/api/pills'
+  if (!form.value.name.trim()) {
+    message.value = 'Name is required.'
+    isError.value = true
+    return
+  }
+  if (!form.value.dosage.trim()) {
+    message.value = 'Dosage is required.'
+    isError.value = true
+    return
+  }
+  if (!form.value.time) {
+    message.value = 'Time is required.'
+    isError.value = true
+    return
+  }
+  if (!form.value.count || form.value.count < 1) {
+    message.value = 'Count must be at least 1.'
+    isError.value = true
+    return
+  }
 
-  const method = isEdit.value ? 'PUT' : 'POST'
+  const timeFormatted = form.value.time.length === 5 ? form.value.time + ':00' : form.value.time
+
+  const payload = {
+    name: form.value.name.trim(),
+    dosage: form.value.dosage.trim(),
+    time: timeFormatted,
+    user_id: 1,
+    count: form.value.count,
+    description: form.value.description.trim() || '',
+    frequency: form.value.frequency.trim() || '',
+    note: form.value.note.trim() || '',
+    image: form.value.image.trim() || ''
+  }
 
   try {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
+    const res = await fetch('http://localhost:3000/api/pills', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     })
 
-    if (!res.ok) throw new Error('Failed to save pill')
+    if (!res.ok) {
+      throw new Error('Failed to save pill')
+    }
 
-    message.value = isEdit.value ? 'Lek je uspešno ažuriran!' : 'Lek je uspešno dodat!'
+    message.value = 'Pill saved successfully!'
     isError.value = false
-
-
-    setTimeout(() => router.push('/pills'), 2000)
-  } catch (err) {
-    console.error('Submit error:', err)
-    message.value = 'Došlo je do greške pri čuvanju leka.'
+    setTimeout(() => router.push('/dashboard'), 1500)
+  } catch (e) {
+    message.value = e.message
     isError.value = true
   }
 }
-
-const messageClass = computed(() =>
-    isError.value ? 'text-red-600' : 'text-green-600'
-)
 </script>
 
 <style scoped>

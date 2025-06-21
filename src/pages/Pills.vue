@@ -22,10 +22,10 @@
         @open-details="goToDetails"
     />
 
-
     <div class="mt-6 text-center">
       <button
           class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-full shadow-md transition duration-300"
+          @click="goToAdd"
       >
         + Add medication
       </button>
@@ -33,42 +33,35 @@
   </div>
 </template>
 
-
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import PillCard from '../components/PillCard.vue'
 import { useRouter } from 'vue-router'
+
 const router = useRouter()
-
-
-
 const pills = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
-const selectedPill = ref(null)
+
 function goToDetails(pill) {
   router.push({ name: 'PillDetails', params: { id: pill.id } })
 }
+
+function goToAdd() {
+  router.push('/add')
+}
+
 async function fetchPills() {
   loading.value = true
   try {
     const res = await fetch('http://localhost:3000/api/pills')
-    if (!res.ok) throw new Error('Greška pri učitavanju lekova')
-    const data = await res.json()
-    pills.value = data
+    if (!res.ok) throw new Error('Error loading pills')
+    pills.value = await res.json()
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
   }
-}
-
-function openModal(pill) {
-  selectedPill.value = pill
-}
-
-function closeModal() {
-  selectedPill.value = null
 }
 
 onMounted(() => {
