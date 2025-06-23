@@ -47,7 +47,7 @@
       <p class="text-sm text-text-light">Last sync: {{ formattedLastSync }}</p>
     </div>
 
-    <section class="bg-white rounded-lg shadow-md p-4">
+    <section v-if="logs.length > 0" class="bg-white rounded-lg shadow-md p-4">
       <p class="font-semibold text-primary mb-2">Today’s Log</p>
       <ul class="space-y-1 text-sm text-text-dark max-h-60 overflow-y-auto">
         <li
@@ -55,15 +55,18 @@
             :key="log.id"
             class="py-2 flex justify-between items-center"
         >
-          <span>{{ formatDateTime(log.taken_at) }} – {{ getMedicationNameById(log.pill_id) }}</span>
-          <span
-              :class="{
-              'text-green-600': log.status.toLowerCase() === 'uzeto',
-              'text-red-500': log.status.toLowerCase() === 'preskočeno',
-            }"
+          <span>{{ formatDateTime(log.taken_at) }} – {{ log.name || 'Unknown' }}</span>
+
+          <span v-if="log.status"
+                :class="{
+    'text-green-600': log.status.toLowerCase() === 'uzeto',
+    'text-red-500': log.status.toLowerCase() === 'preskočeno',
+  }"
           >
-            {{ capitalizeStatus(log.status) }}
-          </span>
+  {{ capitalizeStatus(log.status) }}
+</span>
+          <span v-else class="text-gray-400">Nije uneseno</span>
+
         </li>
       </ul>
     </section>
@@ -73,10 +76,17 @@
         No medications found.
       </p>
       <div v-for="pill in pills" :key="pill.id" class="relative">
-        <PillCard :pill="pill" />
+        <PillCard
+            :pill="pill"
+            @mark-taken="handleMarkTaken"
+            @pill-taken="fetchData"
+
+            @delete-pill="deletePill"
+            @open-details="goToPillDetails"
+        />
         <button
             class="absolute top-2 right-2 bg-primary text-white rounded-full w-6 h-6 text-sm shadow-md"
-            @click="goToPillDetails(pill.id)"
+            @click="goToPillDetails(pill)"
             title="More options"
         >
           +
@@ -94,9 +104,28 @@ import PillCard from '../components/PillCard.vue'
 const pills = ref([])
 const logs = ref([])
 const router = useRouter()
+const userId = 1
 
-const goToPillDetails = (pillId) => {
-  router.push(`/pills/${pillId}`)
+const goToPillDetails = (pill) => {
+  router.push({
+    path: `/pills/${pill.id}`,
+    query: {
+      lastTaken: pill.lastTaken || '',
+    },
+  })
+}
+
+async function fetchTodayLogs() {
+  try {
+    const logsRes = await fetch(`http://localhost:3000/api/pill-logs/user/${userId}/today`)
+
+    if (!logsRes.ok) throw new Error('Failed to fetch logs')
+    const allLogs = await logsRes.json()
+    logs.value = allLogs.sort((a, b) => new Date(b.taken_at) - new Date(a.taken_at))
+    lastSync.value = new Date()
+  } catch (error) {
+    console.error('Error loading today logs:', error)
+  }
 }
 
 async function fetchData() {
@@ -104,16 +133,26 @@ async function fetchData() {
     const medRes = await fetch('http://localhost:3000/api/pills')
     if (!medRes.ok) throw new Error('Failed to fetch pills')
     pills.value = await medRes.json()
-
-    const logsRes = await fetch('http://localhost:3000/api/pill-logs')
-    if (!logsRes.ok) throw new Error('Failed to fetch logs')
-    const allLogs = await logsRes.json()
-
-    logs.value = allLogs.sort(
-        (a, b) => new Date(b.taken_at) - new Date(a.taken_at)
-    )
+    await fetchTodayLogs()
   } catch (error) {
     console.error('Error loading data:', error)
+  }
+}
+
+async function handleMarkTaken(updatedPill) {
+  const index = pills.value.findIndex(p => p.id === updatedPill.id)
+  if (index !== -1) pills.value[index] = updatedPill
+  await fetchTodayLogs()
+}
+
+async function deletePill(id) {
+  try {
+    const res = await fetch(`http://localhost:3000/api/pills/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete pill')
+    pills.value = pills.value.filter(p => p.id !== id)
+    await fetchTodayLogs()
+  } catch (error) {
+    console.error('Failed to delete pill:', error)
   }
 }
 
@@ -144,18 +183,13 @@ function formatDateTime(time) {
   const fixed = time.includes('T') ? time : time.replace(' ', 'T')
   const date = new Date(fixed)
   if (isNaN(date)) return 'Invalid Date'
-  return date.toLocaleString('sr-RS', {
+  return date.toLocaleString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     day: '2-digit',
-    month: '2-digit',
+    month: 'short',
     year: 'numeric',
   })
-}
-
-const getMedicationNameById = (id) => {
-  const med = pills.value.find((m) => m.id === id)
-  return med ? med.name : 'Unknown'
 }
 
 function capitalizeStatus(status) {

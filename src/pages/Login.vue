@@ -84,7 +84,7 @@ function loginUser() {
 }
 
 function registerUser() {
-  // Implementacija registracije
+
   showRegister.value = false
 }
 </script>

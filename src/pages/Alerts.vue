@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 space-y-6 bg-gray-100 min-h-screen">
 
-    <!-- Calendar header -->
+
     <div class="bg-white rounded-2xl shadow p-4">
       <p class="text-sm text-gray-400 mb-1">{{ currentMonthYear }}</p>
       <div class="grid grid-cols-7 gap-2">
@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <!-- Reminder section -->
+
     <section class="bg-green-100 rounded-xl shadow-md p-4 flex items-center gap-3">
       <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +40,7 @@
       </p>
     </section>
 
-    <!-- Medication reminders -->
+
     <section>
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Medication Reminders</h2>
       <div v-if="medications.length">
@@ -88,7 +88,7 @@
       <p v-else class="text-gray-500">No medications for today.</p>
     </section>
 
-    <!-- History log -->
+
     <section class="bg-white rounded-xl shadow-md p-4">
       <h2 class="text-xl font-semibold mb-2">History of taking pills</h2>
       <ul class="divide-y text-sm max-h-60 overflow-y-auto">
@@ -290,9 +290,27 @@ const getMedicationNameById = (id) => {
 
 function formatTime(time) {
   if (!time) return 'N/A'
-  const parts = time.split(':')
-  if (parts.length < 2) return 'Invalid time'
-  return `${parts[0]}:${parts[1]}`
+
+  if (typeof time === 'string') {
+    try {
+      const timesArray = JSON.parse(time)
+      if (Array.isArray(timesArray)) {
+        return timesArray.map(t => t.slice(0, 5)).join(', ')
+      }
+      return time.slice(0, 5)
+    } catch {
+
+      const parts = time.split(':')
+      if (parts.length < 2) return 'Invalid time'
+      return `${parts[0]}:${parts[1]}`
+    }
+  }
+
+  if (Array.isArray(time)) {
+    return time.map(t => (typeof t === 'string' ? t.slice(0, 5) : t)).join(', ')
+  }
+
+  return 'N/A'
 }
 </script>
 

@@ -1,6 +1,5 @@
 <template>
   <div class="p-4">
-
     <h2 class="text-2xl font-semibold text-primary mb-4">Medications</h2>
 
     <div class="mb-4">
@@ -13,13 +12,16 @@
     </div>
 
     <p v-if="loading" class="text-center text-gray-500">Loading...</p>
-    <p v-if="!loading && filteredPills.length === 0" class="text-center text-gray-500">No pills found.</p>
+    <p v-if="!loading && filteredPills.length === 0" class="text-center text-gray-500">
+      No pills found.
+    </p>
 
     <PillCard
         v-for="pill in filteredPills"
         :key="pill.id"
         :pill="pill"
         @open-details="goToDetails"
+        @delete-pill="deletePill"
     />
 
     <div class="mt-6 text-center">
@@ -64,13 +66,28 @@ async function fetchPills() {
   }
 }
 
+async function deletePill(id) {
+  if (!confirm('Da li si sigurna da želiš da obrišeš ovaj lek?')) return
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/pills/${id}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) throw new Error('Greška pri brisanju leka')
+
+    await fetchPills()
+  } catch (error) {
+    alert(error.message)
+  }
+}
+
 onMounted(() => {
   fetchPills()
 })
 
-const filteredPills = computed(() => {
-  return pills.value.filter(pill =>
-      pill.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+const filteredPills = computed(() =>
+    pills.value.filter(pill =>
+        pill.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+)
 </script>

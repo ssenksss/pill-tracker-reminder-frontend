@@ -33,6 +33,9 @@
           <span class="font-semibold">📅 Frequency:</span> {{ formattedFrequency }}
         </p>
         <p class="text-gray-700 mb-3">
+          <span class="font-semibold">⏰ Time(s):</span> {{ formatMultipleTimes(pill.time) }}
+        </p>
+        <p class="text-gray-700 mb-3">
           <span class="font-semibold">🕓 Last Taken:</span> {{ formatDateTime(lastTakenDisplay) }}
         </p>
         <p
@@ -47,13 +50,6 @@
         <p class="text-gray-600 mb-6 text-sm italic">
           🔔 Refill Reminder: when {{ pill.refillReminderCount }} pills left
         </p>
-
-        <div v-if="pill.interactions?.length" class="mb-6">
-          <h2 class="text-red-700 font-semibold text-lg mb-2 flex items-center">⚠️ Drug Interactions</h2>
-          <ul class="list-disc list-inside text-red-600 space-y-1">
-            <li v-for="(interaction, index) in pill.interactions" :key="index">{{ interaction }}</li>
-          </ul>
-        </div>
 
         <button
             @click="isEditing = true"
@@ -105,11 +101,27 @@
           </div>
 
           <div>
-            <label class="block mb-2 font-semibold text-gray-700">Frequency (Time)</label>
+            <label class="block mb-2 font-semibold text-gray-700">Frequency</label>
+            <select
+                v-model="pill.frequency"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block mb-2 font-semibold text-gray-700">
+              Time(s) (multiple times comma separated, npr: 08:00,14:00)
+            </label>
             <input
                 v-model="pill.time"
-                type="time"
+                type="text"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="e.g., 08:00,14:00,20:00"
             />
           </div>
 
@@ -191,12 +203,44 @@ const imagesMap = {
   'omeprazole.webp': pill5,
 }
 
+function formatMySQLToDateTimeLocal(mysqlDateTime) {
+  if (!mysqlDateTime) return ''
+  const [datePart, timePart] = mysqlDateTime.split(' ')
+  const [hours, minutes] = timePart.split(':')
+  return `${datePart}T${hours}:${minutes}`
+}
+
+function formatMultipleTimes(timesStr) {
+  if (!timesStr) return 'N/A'
+  if (typeof timesStr !== 'string') {
+    if (Array.isArray(timesStr)) {
+      return timesStr.map(t => String(t).trim()).join(', ')
+    }
+    return String(timesStr) || 'N/A'
+  }
+  return timesStr.split(',').map(t => t.trim()).join(', ')
+}
+
+function formatDateTime(dateTime) {
+  if (!dateTime) return 'N/A'
+  let dt = dateTime
+  if (!dateTime.includes('T')) dt = dateTime.replace(' ', 'T')
+  const date = new Date(dt)
+  if (isNaN(date)) return dateTime
+  return date.toLocaleString([], {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 async function fetchPill() {
   try {
     const res = await fetch(`http://localhost:3000/api/pills/${route.params.id}`)
     if (res.ok) {
       pill.value = await res.json()
-      lastTakenDisplay.value = pill.value.todayLog?.time || pill.value.lastTaken || ''
+      lastTakenDisplay.value = formatMySQLToDateTimeLocal(pill.value.lastTaken)
     } else {
       console.error('Failed to load pill details')
     }
@@ -213,34 +257,50 @@ const formattedFrequency = computed(() => {
   return pill.value.frequency.charAt(0).toUpperCase() + pill.value.frequency.slice(1)
 })
 
-function formatDateTime(dateTime) {
-  if (!dateTime) return 'N/A'
-  const date = new Date(dateTime)
-  if (isNaN(date)) return dateTime
-  return date.toLocaleString([], {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 async function saveChanges() {
   try {
     pill.value.lastTaken = lastTakenDisplay.value
 
+    const updatedData = {
+      name: pill.value.name,
+      description: pill.value.description,
+      dosage: pill.value.dosage,
+      frequency: pill.value.frequency,
+      time: pill.value.time,
+      count: pill.value.count,
+      lastTaken: pill.value.lastTaken,
+    }
+
+    // 1) Ažuriranje leka
     const res = await fetch(`http://localhost:3000/api/pills/${pill.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pill.value),
+      body: JSON.stringify(updatedData),
     })
-    if (res.ok) {
-      alert('Pill updated successfully!')
-      isEditing.value = false
-      await fetchPill()
-    } else {
+
+    if (!res.ok) {
       alert('Failed to update pill')
+      return
     }
+
+    const logRes = await fetch('http://localhost:3000/api/pill-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pill_id: pill.value.id,
+        status: 'uzeto',
+        taken_at: pill.value.lastTaken.replace('T', ' '),
+      }),
+    })
+
+    if (!logRes.ok) {
+      alert('Failed to log pill taken')
+      return
+    }
+
+    alert('Pill updated and logged successfully!')
+    isEditing.value = false
+    await fetchPill()
   } catch (error) {
     console.error(error)
   }
@@ -251,3 +311,10 @@ function cancelEdit() {
   fetchPill()
 }
 </script>
+
+<style scoped>
+.bg-primary {
+  --tw-bg-opacity: 1;
+  background-color: rgba(34, 197, 94, var(--tw-bg-opacity));
+}
+</style>
