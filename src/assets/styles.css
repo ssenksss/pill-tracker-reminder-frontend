@@ -1,21 +1,26 @@
+/* Učitavanje Google fonta Inter sa dva podebljanja (400 i 600) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* Tailwind direktive za osnovne stilove, komponente i utilite */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Definisanje CSS varijabli za glavne boje i font */
 :root {
-    --color-primary: #00594C;
-    --color-secondary: #03B1A9;
-    --color-background: #f4f4f4;
-    --color-text-dark: #1f2937;
-    --color-text-light: #6b7280;
-    --color-white: #fff;
-    --font-sans: 'Inter', sans-serif;
+    --color-primary: #00594C;       /* Primarna boja (tamnija zelena) */
+    --color-secondary: #03B1A9;     /* Sekundarna boja (svetlija tirkiz) */
+    --color-background: #f4f4f4;    /* Pozadinska boja za ceo sajt */
+    --color-text-dark: #1f2937;     /* Tamna boja teksta */
+    --color-text-light: #6b7280;    /* Svetlija boja za tekst i pomoćne elemente */
+    --color-white: #fff;            /* Bela boja */
+    --font-sans: 'Inter', sans-serif; /* Sans-serif font Inter */
 }
 
+/* Stilovi za telo dokumenta */
 body {
-    margin: 0;
-    font-family: var(--font-sans);
-    background-color: var(--color-background);
-    color: var(--color-text-dark);
+    margin: 0;                      /* Uklanja podrazumevani margin */
+    font-family: var(--font-sans); /* Postavlja font na Inter */
+    background-color: var(--color-background); /* Pozadina svetlosiva */
+    color: var(--color-text-dark); /* Osnovna boja teksta */
 }

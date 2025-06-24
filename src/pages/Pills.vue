@@ -1,7 +1,9 @@
+<!-- Pills -->
 <template>
   <div class="p-4">
     <h2 class="text-2xl font-semibold text-primary mb-4">Medications</h2>
 
+    <!-- Pretraga lekova -->
     <div class="mb-4">
       <input
           v-model="searchQuery"
@@ -11,11 +13,15 @@
       />
     </div>
 
+    <!-- Poruka kada se učitava -->
     <p v-if="loading" class="text-center text-gray-500">Loading...</p>
+
+    <!-- Poruka ako nema rezultata -->
     <p v-if="!loading && filteredPills.length === 0" class="text-center text-gray-500">
       No pills found.
     </p>
 
+    <!-- Prikaz kartica za lekove -->
     <PillCard
         v-for="pill in filteredPills"
         :key="pill.id"
@@ -24,6 +30,7 @@
         @delete-pill="deletePill"
     />
 
+    <!-- Dugme za dodavanje novog leka -->
     <div class="mt-6 text-center">
       <button
           class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-full shadow-md transition duration-300"
@@ -45,14 +52,17 @@ const pills = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
 
+// Navigacija na detalje leka
 function goToDetails(pill) {
   router.push({ name: 'PillDetails', params: { id: pill.id } })
 }
 
+// Navigacija na dodavanje leka
 function goToAdd() {
   router.push('/add')
 }
 
+// Dohvatanje svih lekova
 async function fetchPills() {
   loading.value = true
   try {
@@ -66,6 +76,7 @@ async function fetchPills() {
   }
 }
 
+// Brisanje leka
 async function deletePill(id) {
   if (!confirm('Da li si sigurna da želiš da obrišeš ovaj lek?')) return
 
@@ -75,7 +86,7 @@ async function deletePill(id) {
     })
     if (!res.ok) throw new Error('Greška pri brisanju leka')
 
-    await fetchPills()
+    await fetchPills() // Osveži listu nakon brisanja
   } catch (error) {
     alert(error.message)
   }
@@ -85,6 +96,7 @@ onMounted(() => {
   fetchPills()
 })
 
+// Pretraga lekova po imenu
 const filteredPills = computed(() =>
     pills.value.filter(pill =>
         pill.name.toLowerCase().includes(searchQuery.value.toLowerCase())

@@ -1,7 +1,8 @@
+<!-- Alerts -->
 <template>
   <div class="p-4 space-y-6 bg-gray-100 min-h-screen">
 
-
+    <!-- Header kalendara sa imenom meseca i godinom -->
     <div class="bg-white rounded-2xl shadow p-4">
       <p class="text-sm text-gray-400 mb-1">{{ currentMonthYear }}</p>
       <div class="grid grid-cols-7 gap-2">
@@ -13,13 +14,14 @@
             ? 'bg-primary text-white'
             : 'bg-gray-100 text-gray-800 hover:bg-gray-200'"
         >
+          <!-- Dan u nedelji i datum -->
           <p class="text-xs">{{ d.day }}</p>
           <p class="text-sm font-semibold">{{ d.date }}</p>
         </div>
       </div>
     </div>
 
-
+    <!-- Sekcija sa podsetnikom za hidrataciju -->
     <section class="bg-green-100 rounded-xl shadow-md p-4 flex items-center gap-3">
       <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -28,6 +30,7 @@
           viewBox="0 0 24 24"
           stroke="currentColor"
       >
+        <!-- Ikonica -->
         <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -35,47 +38,58 @@
             d="M13 16h-1v-4h-1m0-4h.01M12 20.5c4.694 0 8.5-3.806 8.5-8.5S16.694 3.5 12 3.5 3.5 7.306 3.5 12s3.806 8.5 8.5 8.5z"
         />
       </svg>
+      <!-- Poruka -->
       <p class="text-sm text-green-900">
         Don’t forget to drink enough water today! 💧 Staying hydrated helps your meds work better.
       </p>
     </section>
 
-
+    <!-- Lista lekova sa podsetnicima -->
     <section>
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Medication Reminders</h2>
       <div v-if="medications.length">
+        <!-- Prikaz svakog leka -->
         <div
             v-for="pill in medications"
             :key="pill.id"
             class="bg-white rounded-2xl shadow-md p-4 mb-4 flex justify-between items-start hover:shadow-lg transition"
         >
           <div class="flex space-x-4">
+            <!-- Slika leka -->
             <img
                 :src="getImageUrl(pill.image)"
                 alt="pill"
                 class="w-12 h-12 object-cover rounded-md border bg-gray-100"
             />
             <div>
+              <!-- Naziv i doza leka -->
               <h3 class="text-base font-semibold text-gray-800">
                 {{ pill.name }} - {{ pill.dosage }}
               </h3>
+              <!-- Napomena ili podrazumevano "After eating" -->
               <p class="text-sm text-gray-500">{{ pill.note || 'After eating' }}</p>
+              <!-- Prikaz vremena uzimanja leka -->
               <p class="text-sm text-primary mt-1">🕒 {{ formatTime(pill.time) }}</p>
+              <!-- Koliko tableta je preostalo -->
               <p v-if="pill.count !== undefined" class="text-sm text-gray-600 mt-1">
                 💊 {{ pill.count }} pills left
               </p>
+              <!-- Upozorenje ako je količina niska -->
               <p v-if="pill.count !== undefined && pill.count < 5" class="text-sm text-red-600">
                 ⚠️ Low supply – consider refill!
               </p>
             </div>
           </div>
+          <!-- Kontrole sa desne strane -->
           <div class="flex flex-col items-end space-y-2">
+            <!-- Dugme za otvaranje modala za izmene -->
             <button
                 class="text-sm text-primary font-medium hover:underline"
                 @click="openModal(pill)"
             >
               More options
             </button>
+            <!-- Dugme za dodavanje leka (refill) -->
             <button
                 @click="refillPill(pill)"
                 class="bg-primary text-white text-sm px-3 py-1 rounded-md hover:bg-secondary transition-all"
@@ -85,10 +99,11 @@
           </div>
         </div>
       </div>
+      <!-- Poruka ako nema lekova -->
       <p v-else class="text-gray-500">No medications for today.</p>
     </section>
 
-
+    <!-- Istorija uzimanja lekova -->
     <section class="bg-white rounded-xl shadow-md p-4">
       <h2 class="text-xl font-semibold mb-2">History of taking pills</h2>
       <ul class="divide-y text-sm max-h-60 overflow-y-auto">
@@ -97,7 +112,9 @@
             :key="log.id"
             class="py-2 flex justify-between items-center"
         >
+          <!-- Datum i naziv leka -->
           <span>{{ formatDateTime(log.taken_at) }} – {{ getMedicationNameById(log.pill_id) }}</span>
+          <!-- Status uzimanja leka, boja zavisi od statusa -->
           <span
               :class="{
               'text-primary': log.status === 'Uzeto',
@@ -110,7 +127,7 @@
       </ul>
     </section>
 
-    <!-- Modal for editing medication -->
+    <!-- Modal za izmenu leka -->
     <transition name="fade">
       <div
           v-if="showModal"
@@ -118,6 +135,7 @@
       >
         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-lg relative">
           <h3 class="text-lg font-semibold mb-4">Edit Medication</h3>
+          <!-- Polja za izmenu imena, doze i napomene -->
           <label class="block mb-2">
             Name:
             <input
@@ -143,6 +161,7 @@
             />
           </label>
 
+          <!-- Dugmad za otkazivanje i čuvanje -->
           <div class="flex justify-end space-x-3">
             <button
                 @click="closeModal"
@@ -166,11 +185,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 
-const medications = ref([])
-const logs = ref([])
+const medications = ref([]) // Lista lekova
+const logs = ref([]) // Lista logova o uzimanju
 
-const defaultImage = 'https://cdn-icons-png.flaticon.com/512/2784/2784451.png'
+const defaultImage = 'https://cdn-icons-png.flaticon.com/512/2784/2784451.png' // Default slika leka
 
+// Vrati ispravan URL slike, ako nije validna, vrati default sliku
 function getImageUrl(image) {
   if (!image) return defaultImage
   try {
@@ -180,6 +200,7 @@ function getImageUrl(image) {
   }
 }
 
+// Funkcija za dodavanje leka (povećavanje broja tableta)
 async function refillPill(pill) {
   const newCount = (pill.count || 0) + 10
   try {
@@ -196,19 +217,22 @@ async function refillPill(pill) {
   }
 }
 
-const showModal = ref(false)
-const selectedPill = ref(null)
+const showModal = ref(false) // Da li je modal otvoren
+const selectedPill = ref(null) // Trenutno selektovani lek u modalu
 
+// Otvori modal i postavi selektovani lek
 function openModal(pill) {
   selectedPill.value = { ...pill }
   showModal.value = true
 }
 
+// Zatvori modal i resetuj selekciju
 function closeModal() {
   showModal.value = false
   selectedPill.value = null
 }
 
+// Sačuvaj izmene iz modala (PUT zahtev)
 async function saveChanges() {
   if (!selectedPill.value) return
 
@@ -220,6 +244,7 @@ async function saveChanges() {
     })
     if (!res.ok) throw new Error('Failed to save')
 
+    // Ažuriraj lokalnu listu lekova
     const index = medications.value.findIndex(p => p.id === selectedPill.value.id)
     if (index !== -1) {
       medications.value[index] = { ...selectedPill.value }
@@ -232,6 +257,7 @@ async function saveChanges() {
   }
 }
 
+// Učitavanje podataka na mount komponentu
 onMounted(async () => {
   try {
     const medRes = await fetch('http://localhost:3000/api/pills')
@@ -243,6 +269,7 @@ onMounted(async () => {
   try {
     const logsRes = await fetch('http://localhost:3000/api/pill-logs')
     logs.value = await logsRes.json()
+    // Sortiranje logova po datumu, najnoviji prvi
     logs.value.sort((a, b) => new Date(b.taken_at) - new Date(a.taken_at))
   } catch (err) {
     console.error('Failed to fetch logs:', err)
@@ -251,13 +278,16 @@ onMounted(async () => {
 
 const today = new Date()
 
+// Prikaz trenutnog meseca i godine u formatu "June 2025"
 const currentMonthYear = computed(() =>
     today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 )
 
+// Izračunavanje početka nedelje (ponedeljak)
 const startOfWeek = new Date(today)
 startOfWeek.setDate(today.getDate() - today.getDay() + 1)
 
+// Generisanje niza sa danima nedelje (kratki nazivi i datumi)
 const daysInWeek = Array.from({ length: 7 }).map((_, i) => {
   const date = new Date(startOfWeek)
   date.setDate(startOfWeek.getDate() + i)
@@ -267,8 +297,10 @@ const daysInWeek = Array.from({ length: 7 }).map((_, i) => {
   }
 })
 
+// Indeks aktivnog dana u nedelji (ponedeljak = 0, nedelja = 6)
 const activeDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1
 
+// Formatiranje ISO stringova u čitljiv datum i vreme
 function formatDateTime(time) {
   if (!time) return 'N/A'
   const isoTime = time.includes('T') ? time : time.replace(' ', 'T')
@@ -283,11 +315,13 @@ function formatDateTime(time) {
   })
 }
 
+// Pronalaženje imena leka po ID-ju iz logova
 const getMedicationNameById = (id) => {
   const med = medications.value.find((m) => m.id === id)
   return med ? med.name : 'Unknown'
 }
 
+// Formatiranje vremena u prikaz npr. "08:30, 14:00"
 function formatTime(time) {
   if (!time) return 'N/A'
 
@@ -299,7 +333,7 @@ function formatTime(time) {
       }
       return time.slice(0, 5)
     } catch {
-
+      // ako nije JSON, vraća samo prvih 5 znakova (HH:mm)
       const parts = time.split(':')
       if (parts.length < 2) return 'Invalid time'
       return `${parts[0]}:${parts[1]}`
@@ -315,6 +349,7 @@ function formatTime(time) {
 </script>
 
 <style>
+/* Animacija za fade modal */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.25s ease;
